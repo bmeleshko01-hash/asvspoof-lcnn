@@ -72,8 +72,8 @@ class Trainer(BaseTrainer):
 
         # logging scheme might be different for different partitions
         if mode == "train":  # the method is called only every self.log_step steps
-            img = batch["img"][0].detach().cpu().numpy().transpose(1, 2, 0)
-            self.writer.add_image("image", img)
+            # Log Stuff
+            pass
         else:
-            img = batch["img"][0].detach().cpu().numpy().transpose(1, 2, 0)
-            self.writer.add_image("image", img)
+            # Log Stuff
+            pass
