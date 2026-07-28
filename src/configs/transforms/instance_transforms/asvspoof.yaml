@@ -1,0 +1,35 @@
+train:
+  data_object:
+    _target_: torchvision.transforms.v2.Compose
+    transforms:
+      - _target_: src.transforms.RandomCrop1D
+        crop_length: 95840
+
+      - _target_: src.transforms.RepeatPad1D
+        target_length: 95840
+
+      - _target_: src.transforms.LFCC
+        sample_rate: 16000
+        n_filter: 20
+        n_lfcc: 20
+        n_fft: 512
+        win_length: 320
+        hop_length: 160
+
+inference:
+  data_object:
+    _target_: torchvision.transforms.v2.Compose
+    transforms:
+      - _target_: src.transforms.RandomCrop1D
+        crop_length: 95840
+
+      - _target_: src.transforms.RepeatPad1D
+        target_length: 95840
+
+      - _target_: src.transforms.LFCC
+        sample_rate: 16000
+        n_filter: 70
+        n_lfcc: 20
+        n_fft: 512
+        win_length: 512
+        hop_length: 256

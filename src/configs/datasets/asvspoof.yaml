@@ -1,0 +1,20 @@
+train:
+  _target_: src.datasets.ASVspoofDataset
+  audio_dir: LA/ASVspoof2019_LA_train/flac
+  protocol_file: LA/ASVspoof2019_LA_cm_protocols/ASVspoof2019.LA.cm.train.trn.txt
+  name: train
+  instance_transforms: ${transforms.instance_transforms.train}
+
+val:
+  _target_: src.datasets.ASVspoofDataset
+  audio_dir: LA/ASVspoof2019_LA_dev/flac
+  protocol_file: LA/ASVspoof2019_LA_cm_protocols/ASVspoof2019.LA.cm.dev.trl.txt
+  name: dev
+  instance_transforms: ${transforms.instance_transforms.inference}
+
+test:
+  _target_: src.datasets.ASVspoofDataset
+  audio_dir: LA/ASVspoof2019_LA_eval/flac
+  protocol_file: LA/ASVspoof2019_LA_cm_protocols/ASVspoof2019.LA.cm.eval.trl.txt
+  name: eval
+  instance_transforms: ${transforms.instance_transforms.inference}
