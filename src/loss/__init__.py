@@ -1,1 +1,1 @@
-from src.loss.example import ExampleLoss
+from src.loss.CrossEntropyLoss import CrossEntropyLoss

@@ -6,6 +6,7 @@ from torch.nn.utils import clip_grad_norm_
 from tqdm.auto import tqdm
 
 from src.datasets.data_utils import inf_loop
+from src.metrics.eer import compute_eer
 from src.metrics.tracker import MetricTracker
 from src.utils.io_utils import ROOT_PATH
 
@@ -83,7 +84,7 @@ class BaseTrainer:
             self.epoch_len = epoch_len
 
         self.evaluation_dataloaders = {
-            k: v for k, v in dataloaders.items() if k != "train"
+            "val": dataloaders["val"]
         }
 
         # define epochs
@@ -243,9 +244,12 @@ class BaseTrainer:
         logs = last_train_metrics
 
         # Run val/test
-        for part, dataloader in self.evaluation_dataloaders.items():
-            val_logs = self._evaluation_epoch(epoch, part, dataloader)
-            logs.update(**{f"{part}_{name}": value for name, value in val_logs.items()})
+        if epoch % 5 == 0:
+            for part, dataloader in self.evaluation_dataloaders.items():
+                val_logs = self._evaluation_epoch(epoch, part, dataloader)
+                logs.update(
+                    **{f"{part}_{name}": value for name, value in val_logs.items()}
+                )
 
         return logs
 
@@ -263,6 +267,8 @@ class BaseTrainer:
         self.is_train = False
         self.model.eval()
         self.evaluation_metrics.reset()
+        all_scores = []
+        all_labels = []
         with torch.no_grad():
             for batch_idx, batch in tqdm(
                 enumerate(dataloader),
@@ -273,13 +279,26 @@ class BaseTrainer:
                     batch,
                     metrics=self.evaluation_metrics,
                 )
-            self.writer.set_step(epoch * self.epoch_len, part)
-            self._log_scalars(self.evaluation_metrics)
-            self._log_batch(
-                batch_idx, batch, part
-            )  # log only the last batch during inference
+                scores = torch.softmax(batch["logits"], dim=1)[:, 1]
 
-        return self.evaluation_metrics.result()
+                all_scores.append(scores.cpu())
+                all_labels.append(batch["labels"].cpu())
+
+        all_scores = torch.cat(all_scores)
+        all_labels = torch.cat(all_labels)
+        eer = compute_eer(all_scores, all_labels)
+
+        self.writer.set_step(epoch * self.epoch_len, part)
+        self._log_scalars(self.evaluation_metrics)
+        self.writer.add_scalar("EER", eer)
+        self._log_batch(
+            batch_idx, batch, part
+        )  # log only the last batch during inference
+
+        logs = self.evaluation_metrics.result()
+        logs["EER"] = eer
+
+        return logs
 
     def _monitor_performance(self, logs, not_improved_count):
         """

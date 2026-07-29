@@ -17,11 +17,11 @@ lr_scheduler:
   step_size: 10
 
 loss_function:
-  _target_: torch.nn.CrossEntropyLoss
+  _target_: src.loss.CrossEntropyLoss
 
 trainer:
   log_step: 50
-  n_epochs: 100
+  n_epochs: 5
   epoch_len: 500
   device_tensors:
     - data_object
@@ -29,7 +29,7 @@ trainer:
   resume_from: null
   device: auto
   override: false
-  monitor: off
+  monitor:  min val_EER
   save_period: 5
   early_stop: ${trainer.n_epochs}
   save_dir: saved

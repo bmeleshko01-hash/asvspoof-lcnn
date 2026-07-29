@@ -31,5 +31,5 @@ inference:
         n_filter: 70
         n_lfcc: 20
         n_fft: 512
-        win_length: 512
-        hop_length: 256
+        win_length: 320
+        hop_length: 160

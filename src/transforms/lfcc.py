@@ -32,5 +32,4 @@ class LFCC(nn.Module):
             Tensor: LFCC [channels, n_lfcc, time].
         """
         x = self.transform(x)
-        print("LFCC shape:", x.shape)
         return x

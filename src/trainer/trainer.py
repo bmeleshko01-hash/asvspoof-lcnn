@@ -1,6 +1,6 @@
 from src.metrics.tracker import MetricTracker
 from src.trainer.base_trainer import BaseTrainer
-
+from src.metrics.eer import compute_eer
 
 class Trainer(BaseTrainer):
     """

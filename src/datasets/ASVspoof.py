@@ -77,7 +77,7 @@ class ASVspoofDataset(BaseDataset):
             else:
                 label = 0
 
-            audio_path = self.audio_dir / f"{audio_id}.flac"
+            audio_path = Path(self.audio_dir) / f"{audio_id}.flac"
 
             index.append(
                 {
