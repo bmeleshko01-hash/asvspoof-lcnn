@@ -4,5 +4,5 @@ inference:
   - _target_: src.metrics.accuracy.AccuracyMetric
     name: "Accuracy"
 
-  - _target_: src.metrics.eer.EERMetric
+  - _target_: src.metrics.eer.compute_eer
     name: "EER"
