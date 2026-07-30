@@ -202,6 +202,9 @@ class BaseTrainer:
         self.model.train()
         self.train_metrics.reset()
 
+        label_0_count = 0
+        label_1_count = 0
+
         all_scores = []
         all_labels = []
         correct = 0
@@ -218,6 +221,10 @@ class BaseTrainer:
                     batch,
                     metrics=self.train_metrics,
                 )
+                labels = batch["labels"]
+
+                label_0_count += (labels == 0).sum().item()
+                label_1_count += (labels == 1).sum().item()
             except torch.cuda.OutOfMemoryError as e:
                 if self.skip_oom:
                     self.logger.warning("OOM on batch. Skipping batch.")
@@ -281,6 +288,10 @@ class BaseTrainer:
             logs.update(
                 **{f"{part}_{name}": value for name, value in val_logs.items()}
             )
+
+        print("\nTRAIN LABEL COUNTS")
+        print("label 0:", label_0_count)
+        print("label 1:", label_1_count)
 
         return logs
 
