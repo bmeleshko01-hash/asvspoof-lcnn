@@ -13,4 +13,4 @@ inferencer:
   device: auto
   save_path: "testing"
   seed: 1
-from_pretrained: "saved/testing/model_best.pth"
+  from_pretrained: "saved/testing/model_best.pth"
