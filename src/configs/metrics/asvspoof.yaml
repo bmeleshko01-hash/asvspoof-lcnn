@@ -1,4 +1,8 @@
-train: [] # use empty list instead of None / null
-inference: # metrics that are calculated during inference (eval)
+train: []
+
+inference:
   - _target_: src.metrics.accuracy.AccuracyMetric
     name: "Accuracy"
+
+  - _target_: src.metrics.eer.EERMetric
+    name: "EER"
