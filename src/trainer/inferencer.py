@@ -3,7 +3,7 @@ from tqdm.auto import tqdm
 
 from src.metrics.tracker import MetricTracker
 from src.trainer.base_trainer import BaseTrainer
-
+from src.metrics.eer import compute_eer
 
 class Inferencer(BaseTrainer):
     """
@@ -166,9 +166,12 @@ class Inferencer(BaseTrainer):
         self.is_train = False
         self.model.eval()
 
-        self.evaluation_metrics.reset()
+        if self.evaluation_metrics is not None:
+            self.evaluation_metrics.reset()
 
-        # create Save dir
+        all_scores = []
+        all_labels = []
+
         if self.save_path is not None:
             (self.save_path / part).mkdir(exist_ok=True, parents=True)
 
@@ -185,4 +188,17 @@ class Inferencer(BaseTrainer):
                     metrics=self.evaluation_metrics,
                 )
 
-        return self.evaluation_metrics.result()
+                scores = torch.softmax(batch["logits"], dim=1)[:, 1]
+
+                all_scores.append(scores.cpu())
+                all_labels.append(batch["labels"].cpu())
+
+        logs = {}
+
+        if self.evaluation_metrics is not None:
+            logs.update(self.evaluation_metrics.result())
+
+        all_scores = torch.cat(all_scores)
+        all_labels = torch.cat(all_labels)
+
+        logs["EER"] = compute_eer(all_scores, all_labels)
