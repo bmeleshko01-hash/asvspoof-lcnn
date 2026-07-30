@@ -10,7 +10,7 @@ class CrossEntropyLoss(nn.Module):
     def __init__(self):
         super().__init__()
 
-        weights = torch.tensor([8.84, 1.0])
+        weights = torch.tensor([1.0, 8.84])
         self.loss = nn.CrossEntropyLoss(weight=weights)
 
     def forward(self, logits: torch.Tensor, labels: torch.Tensor, **batch):
