@@ -131,6 +131,8 @@ class BaselineModel(nn.Module):
 ),
             MFM(),
 
+            nn.Dropout(p=0.75),
+
             nn.BatchNorm1d(80),
 
             nn.Linear(
