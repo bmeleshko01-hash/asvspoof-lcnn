@@ -191,7 +191,7 @@ class Inferencer(BaseTrainer):
                     metrics=self.evaluation_metrics,
                 )
 
-                scores = torch.softmax(batch["logits"], dim=1)[:, 1]
+                scores = batch["logits"][:, 1] - batch["logits"][:, 0]
 
                 all_scores.append(scores.cpu())
                 all_labels.append(batch["labels"].cpu())
