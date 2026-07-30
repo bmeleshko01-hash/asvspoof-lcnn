@@ -244,7 +244,7 @@ class BaseTrainer:
         logs = last_train_metrics
 
         # Run val/test
-        if epoch % 5 == 0:
+        if True:
             for part, dataloader in self.evaluation_dataloaders.items():
                 val_logs = self._evaluation_epoch(epoch, part, dataloader)
                 logs.update(
