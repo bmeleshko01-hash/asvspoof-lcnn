@@ -1,4 +1,5 @@
 import warnings
+import logging
 
 import hydra
 import torch
@@ -8,6 +9,7 @@ from src.datasets.data_utils import get_dataloaders
 from src.trainer import Inferencer
 from src.utils.init_utils import set_random_seed
 from src.utils.io_utils import ROOT_PATH
+from src.logger.wandb import WandBWriter
 
 warnings.filterwarnings("ignore", category=UserWarning)
 
@@ -44,6 +46,13 @@ def main(config):
     save_path = ROOT_PATH / "data" / "saved" / config.inferencer.save_path
     save_path.mkdir(exist_ok=True, parents=True)
 
+    writer = WandBWriter(
+        logger=logging.getLogger(__name__),
+        project_config={},
+        project_name="pytorch_template",
+        run_name="asvspoof-inference-epoch5",
+        mode="online",
+    )
     inferencer = Inferencer(
         model=model,
         config=config,
@@ -53,9 +62,12 @@ def main(config):
         save_path=save_path,
         metrics=metrics,
         skip_model_load=False,
+        writer=writer,
     )
 
     logs = inferencer.run_inference()
+
+    writer.wandb.finish()
 
     for part in logs.keys():
         for key, value in logs[part].items():

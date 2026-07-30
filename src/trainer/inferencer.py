@@ -203,4 +203,21 @@ class Inferencer(BaseTrainer):
 
         logs["EER"] = compute_eer(all_scores, all_labels)
 
+        self.writer.set_step(0, part)
+
+        self.writer.add_scalar("Accuracy", logs["Accuracy"])
+        self.writer.add_scalar("EER", logs["EER"])
+
+        self.writer.add_histogram(
+            "scores_label_0",
+            all_scores[all_labels == 0],
+            bins=50,
+        )
+
+        self.writer.add_histogram(
+            "scores_label_1",
+            all_scores[all_labels == 1],
+            bins=50,
+        )
+
         return logs
