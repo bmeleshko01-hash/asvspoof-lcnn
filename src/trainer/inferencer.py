@@ -24,6 +24,7 @@ class Inferencer(BaseTrainer):
         metrics=None,
         batch_transforms=None,
         skip_model_load=False,
+        writer=None,
     ):
         """
         Initialize the Inferencer.
@@ -65,6 +66,8 @@ class Inferencer(BaseTrainer):
         # path definition
 
         self.save_path = save_path
+
+        self.writer = writer
 
         # define metrics
         self.metrics = metrics
