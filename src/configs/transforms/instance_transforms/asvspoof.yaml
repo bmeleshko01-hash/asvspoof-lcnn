@@ -2,7 +2,7 @@ train:
   data_object:
     _target_: torchvision.transforms.v2.Compose
     transforms:
-      - _target_: src.transforms.RandomCrop1D
+      - _target_: src.transforms.CenterCrop1D
         crop_length: 95840
 
       - _target_: src.transforms.RepeatPad1D
@@ -20,7 +20,7 @@ inference:
   data_object:
     _target_: torchvision.transforms.v2.Compose
     transforms:
-      - _target_: src.transforms.RandomCrop1D
+      - _target_: src.transforms.CenterCrop1D
         crop_length: 95840
 
       - _target_: src.transforms.RepeatPad1D
@@ -28,7 +28,7 @@ inference:
 
       - _target_: src.transforms.LFCC
         sample_rate: 16000
-        n_filter: 70
+        n_filter: 20
         n_lfcc: 20
         n_fft: 512
         win_length: 320
