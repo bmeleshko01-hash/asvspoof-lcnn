@@ -202,3 +202,5 @@ class Inferencer(BaseTrainer):
         all_labels = torch.cat(all_labels)
 
         logs["EER"] = compute_eer(all_scores, all_labels)
+
+        return logs
