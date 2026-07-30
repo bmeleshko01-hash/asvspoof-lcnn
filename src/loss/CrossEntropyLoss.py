@@ -1,5 +1,5 @@
 import torch
-from torch import nn
+from torch import device, nn
 
 
 class CrossEntropyLoss(nn.Module):
@@ -9,7 +9,9 @@ class CrossEntropyLoss(nn.Module):
 
     def __init__(self):
         super().__init__()
-        self.loss = nn.CrossEntropyLoss()
+
+        weights = torch.tensor([8.84, 1.0])
+        self.loss = nn.CrossEntropyLoss(weight=weights)
 
     def forward(self, logits: torch.Tensor, labels: torch.Tensor, **batch):
         """
