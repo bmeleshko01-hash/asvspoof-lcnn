@@ -1,4 +1,4 @@
-from abc import abstractmethod
+rom abc import abstractmethod
 
 import torch
 from numpy import inf
@@ -201,8 +201,15 @@ class BaseTrainer:
         self.is_train = True
         self.model.train()
         self.train_metrics.reset()
-        self.writer.set_step((epoch - 1) * self.epoch_len)
+
+        all_scores = []
+        all_labels = []
+        correct = 0
+        total = 0
+
+        self.writer.set_step((epoch - 1) * self.epoch_len, "train")
         self.writer.add_scalar("epoch", epoch)
+
         for batch_idx, batch in enumerate(
             tqdm(self.train_dataloader, desc="train", total=self.epoch_len)
         ):
@@ -214,42 +221,66 @@ class BaseTrainer:
             except torch.cuda.OutOfMemoryError as e:
                 if self.skip_oom:
                     self.logger.warning("OOM on batch. Skipping batch.")
-                    torch.cuda.empty_cache()  # free some memory
+                    torch.cuda.empty_cache()
                     continue
-                else:
-                    raise e
+                raise e
+
+            scores = batch["logits"][:, 1] - batch["logits"][:, 0]
+            labels = batch["labels"]
+
+            all_scores.append(scores.detach().cpu())
+            all_labels.append(labels.detach().cpu())
+
+            predictions = batch["logits"].argmax(dim=-1)
+            correct += (predictions == labels).sum().item()
+            total += labels.numel()
 
             self.train_metrics.update("grad_norm", self._get_grad_norm())
 
-            # log current results
             if batch_idx % self.log_step == 0:
-                self.writer.set_step((epoch - 1) * self.epoch_len + batch_idx)
+                self.writer.set_step(
+                    (epoch - 1) * self.epoch_len + batch_idx,
+                    "train",
+                )
                 self.logger.debug(
                     "Train Epoch: {} {} Loss: {:.6f}".format(
-                        epoch, self._progress(batch_idx), batch["loss"].item()
+                        epoch,
+                        self._progress(batch_idx),
+                        batch["loss"].item(),
                     )
                 )
-                self.writer.add_scalar(
-                    "learning rate", self.lr_scheduler.get_last_lr()[0]
-                )
+                if self.lr_scheduler is not None:
+                    self.writer.add_scalar(
+                        "learning rate",
+                        self.lr_scheduler.get_last_lr()[0],
+                    )
                 self._log_scalars(self.train_metrics)
                 self._log_batch(batch_idx, batch)
-                # we don't want to reset train metrics at the start of every epoch
-                # because we are interested in recent train metrics
                 last_train_metrics = self.train_metrics.result()
                 self.train_metrics.reset()
+
             if batch_idx + 1 >= self.epoch_len:
                 break
 
-        logs = last_train_metrics
+        all_scores = torch.cat(all_scores)
+        all_labels = torch.cat(all_labels)
 
-        # Run val/test
-        if True:
-            for part, dataloader in self.evaluation_dataloaders.items():
-                val_logs = self._evaluation_epoch(epoch, part, dataloader)
-                logs.update(
-                    **{f"{part}_{name}": value for name, value in val_logs.items()}
-                )
+        train_accuracy = correct / total
+        train_eer = compute_eer(all_scores, all_labels)
+
+        self.writer.set_step(epoch * self.epoch_len, "train")
+        self.writer.add_scalar("Accuracy", train_accuracy)
+        self.writer.add_scalar("EER", train_eer)
+
+        logs = last_train_metrics
+        logs["Accuracy"] = train_accuracy
+        logs["EER"] = train_eer
+
+        for part, dataloader in self.evaluation_dataloaders.items():
+            val_logs = self._evaluation_epoch(epoch, part, dataloader)
+            logs.update(
+                **{f"{part}_{name}": value for name, value in val_logs.items()}
+            )
 
         return logs
 
@@ -259,7 +290,7 @@ class BaseTrainer:
 
         Args:
             epoch (int): current training epoch.
-            part (str): partition to evaluate on
+            part (str): partition to evaluate on.
             dataloader (DataLoader): dataloader for the partition.
         Returns:
             logs (dict): logs that contain the information about evaluation.
@@ -267,8 +298,10 @@ class BaseTrainer:
         self.is_train = False
         self.model.eval()
         self.evaluation_metrics.reset()
+
         all_scores = []
         all_labels = []
+
         with torch.no_grad():
             for batch_idx, batch in tqdm(
                 enumerate(dataloader),
@@ -279,7 +312,8 @@ class BaseTrainer:
                     batch,
                     metrics=self.evaluation_metrics,
                 )
-                scores = torch.softmax(batch["logits"], dim=1)[:, 1]
+
+                scores = batch["logits"][:, 1] - batch["logits"][:, 0]
 
                 all_scores.append(scores.cpu())
                 all_labels.append(batch["labels"].cpu())
@@ -292,8 +326,10 @@ class BaseTrainer:
         self._log_scalars(self.evaluation_metrics)
         self.writer.add_scalar("EER", eer)
         self._log_batch(
-            batch_idx, batch, part
-        )  # log only the last batch during inference
+            batch_idx,
+            batch,
+            part,
+        )
 
         logs = self.evaluation_metrics.result()
         logs["EER"] = eer
