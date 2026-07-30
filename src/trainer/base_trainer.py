@@ -1,4 +1,4 @@
-rom abc import abstractmethod
+from abc import abstractmethod
 
 import torch
 from numpy import inf
