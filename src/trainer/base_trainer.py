@@ -313,6 +313,11 @@ class BaseTrainer:
         all_scores = []
         all_labels = []
 
+        predicted_0 = 0
+        predicted_1 = 0
+        true_0 = 0
+        true_1 = 0
+
         with torch.no_grad():
             for batch_idx, batch in tqdm(
                 enumerate(dataloader),
@@ -324,11 +329,24 @@ class BaseTrainer:
                     metrics=self.evaluation_metrics,
                 )
 
+                predictions = batch["logits"].argmax(dim=1)
+                labels = batch["labels"]
+
+                predicted_0 += (predictions == 0).sum().item()
+                predicted_1 += (predictions == 1).sum().item()
+
+                true_0 += (labels == 0).sum().item()
+                true_1 += (labels == 1).sum().item()
+
                 scores = batch["logits"][:, 1] - batch["logits"][:, 0]
 
                 all_scores.append(scores.cpu())
                 all_labels.append(batch["labels"].cpu())
-
+            print(f"\n{part.upper()} COUNTS")
+            print("true 0:", true_0)
+            print("true 1:", true_1)
+            print("predicted 0:", predicted_0)
+            print("predicted 1:", predicted_1)
         all_scores = torch.cat(all_scores)
         all_labels = torch.cat(all_labels)
         eer = compute_eer(all_scores, all_labels)
