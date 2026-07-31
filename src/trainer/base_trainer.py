@@ -207,7 +207,6 @@ class BaseTrainer:
         correct = 0
         total = 0
 
-        self.writer.set_step((epoch - 1) * self.epoch_len, "train")
         self.writer.add_scalar("epoch", epoch)
 
         for batch_idx, batch in enumerate(
@@ -240,10 +239,6 @@ class BaseTrainer:
             self.train_metrics.update("grad_norm", self._get_grad_norm())
 
             if batch_idx % self.log_step == 0:
-                self.writer.set_step(
-                    (epoch - 1) * self.epoch_len + batch_idx,
-                    "train",
-                )
                 self.logger.debug(
                     "Train Epoch: {} {} Loss: {:.6f}".format(
                         epoch,

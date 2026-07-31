@@ -96,7 +96,6 @@ class WandBWriter:
                 self._object_name(scalar_name): scalar
                 for scalar_name, scalar in scalars.items()
             },
-            step=self.step,
         )
 
     def add_image(self, image_name, image):
