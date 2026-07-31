@@ -1,4 +1,8 @@
+import csv
+
+import pandas
 import torch
+from pathlib import Path
 from tqdm.auto import tqdm
 
 from src.metrics.tracker import MetricTracker
@@ -165,7 +169,7 @@ class Inferencer(BaseTrainer):
         Returns:
             logs (dict): metrics, calculated on the partition.
         """
-
+        rows = []
         self.is_train = False
         self.model.eval()
 
@@ -193,6 +197,10 @@ class Inferencer(BaseTrainer):
 
                 scores = batch["logits"][:, 1] - batch["logits"][:, 0]
 
+                for path, score in zip(batch["path"], scores):
+                    audio_id = Path(path).stem
+                    rows.append((audio_id, score.item()))
+
                 all_scores.append(scores.cpu())
                 all_labels.append(batch["labels"].cpu())
 
@@ -211,16 +219,9 @@ class Inferencer(BaseTrainer):
         self.writer.add_scalar("Accuracy", logs["Accuracy"])
         self.writer.add_scalar("EER", logs["EER"])
 
-        self.writer.add_histogram(
-            "scores_label_0",
-            all_scores[all_labels == 0],
-            bins=50,
-        )
+        csv_path = self.save_path / f"{part}.csv"
 
-        self.writer.add_histogram(
-            "scores_label_1",
-            all_scores[all_labels == 1],
-            bins=50,
-        )
-
+        with csv_path.open("w", newline="", encoding="utf-8") as file:
+            writer = csv.writer(file)
+            writer.writerows(rows)
         return logs

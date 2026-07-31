@@ -202,9 +202,6 @@ class BaseTrainer:
         self.model.train()
         self.train_metrics.reset()
 
-        label_0_count = 0
-        label_1_count = 0
-
         all_scores = []
         all_labels = []
         correct = 0
@@ -222,9 +219,7 @@ class BaseTrainer:
                     metrics=self.train_metrics,
                 )
                 labels = batch["labels"]
-
-                label_0_count += (labels == 0).sum().item()
-                label_1_count += (labels == 1).sum().item()
+                
             except torch.cuda.OutOfMemoryError as e:
                 if self.skip_oom:
                     self.logger.warning("OOM on batch. Skipping batch.")
@@ -261,7 +256,6 @@ class BaseTrainer:
                         "learning rate",
                         self.lr_scheduler.get_last_lr()[0],
                     )
-                self._log_scalars(self.train_metrics)
                 self._log_batch(batch_idx, batch)
                 last_train_metrics = self.train_metrics.result()
                 self.train_metrics.reset()
@@ -274,8 +268,8 @@ class BaseTrainer:
 
         train_accuracy = correct / total
         train_eer = compute_eer(all_scores, all_labels)
-
-        self.writer.set_step(epoch * self.epoch_len, "train")
+        
+        self.writer.set_step(epoch, "train")
         self.writer.add_scalar("Accuracy", train_accuracy)
         self.writer.add_scalar("EER", train_eer)
 
@@ -288,10 +282,6 @@ class BaseTrainer:
             logs.update(
                 **{f"{part}_{name}": value for name, value in val_logs.items()}
             )
-
-        print("\nTRAIN LABEL COUNTS")
-        print("label 0:", label_0_count)
-        print("label 1:", label_1_count)
 
         return logs
 
@@ -312,11 +302,8 @@ class BaseTrainer:
 
         all_scores = []
         all_labels = []
-
-        predicted_0 = 0
-        predicted_1 = 0
-        true_0 = 0
-        true_1 = 0
+        correct = 0
+        total = 0
 
         with torch.no_grad():
             for batch_idx, batch in tqdm(
@@ -329,30 +316,23 @@ class BaseTrainer:
                     metrics=self.evaluation_metrics,
                 )
 
-                predictions = batch["logits"].argmax(dim=1)
-                labels = batch["labels"]
-
-                predicted_0 += (predictions == 0).sum().item()
-                predicted_1 += (predictions == 1).sum().item()
-
-                true_0 += (labels == 0).sum().item()
-                true_1 += (labels == 1).sum().item()
-
                 scores = batch["logits"][:, 1] - batch["logits"][:, 0]
 
                 all_scores.append(scores.cpu())
                 all_labels.append(batch["labels"].cpu())
-            print(f"\n{part.upper()} COUNTS")
-            print("true 0:", true_0)
-            print("true 1:", true_1)
-            print("predicted 0:", predicted_0)
-            print("predicted 1:", predicted_1)
+
+                predictions = batch["logits"].argmax(dim=-1)
+                labels = batch["labels"]
+
+                correct += (predictions == labels).sum().item()
+                total += labels.numel()
         all_scores = torch.cat(all_scores)
         all_labels = torch.cat(all_labels)
         eer = compute_eer(all_scores, all_labels)
+        accuracy = correct / total
 
-        self.writer.set_step(epoch * self.epoch_len, part)
-        self._log_scalars(self.evaluation_metrics)
+        self.writer.set_step(epoch, part)
+        self.writer.add_scalar("Accuracy", accuracy)
         self.writer.add_scalar("EER", eer)
         self._log_batch(
             batch_idx,
@@ -361,6 +341,7 @@ class BaseTrainer:
         )
 
         logs = self.evaluation_metrics.result()
+        logs["Accuracy"] = accuracy
         logs["EER"] = eer
 
         return logs

@@ -50,7 +50,7 @@ def main(config):
         logger=logging.getLogger(__name__),
         project_config={},
         project_name="pytorch_template",
-        run_name="asvspoof-inference-epoch5",
+        run_name="asvspoof-inference-epoch",
         mode="online",
     )
     inferencer = Inferencer(

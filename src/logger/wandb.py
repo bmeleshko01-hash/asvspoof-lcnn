@@ -1,16 +1,8 @@
-from datetime import datetime
-
 import numpy as np
 import pandas as pd
 
 
 class WandBWriter:
-    """
-    Class for experiment tracking via WandB.
-
-    See https://docs.wandb.ai/.
-    """
-
     def __init__(
         self,
         logger,
@@ -22,21 +14,6 @@ class WandBWriter:
         mode="online",
         **kwargs,
     ):
-        """
-        API key is expected to be provided by the user in the terminal.
-
-        Args:
-            logger (Logger): logger that logs output.
-            project_config (dict): config for the current experiment.
-            project_name (str): name of the project inside experiment tracker.
-            entity (str | None): name of the entity inside experiment
-                tracker. Used if you work in a team.
-            run_id (str | None): the id of the current run.
-            run_name (str | None): the name of the run. If None, random name
-                is given.
-            mode (str): if online, log data to the remote server. If
-                offline, log locally.
-        """
         try:
             import wandb
 
@@ -49,7 +26,7 @@ class WandBWriter:
                 entity=entity,
                 config=project_config,
                 name=run_name,
-                resume="allow",  # resume the run if run_id existed
+                resume="allow",
                 id=self.run_id,
                 mode=mode,
                 save_code=kwargs.get("save_code", False),
@@ -60,33 +37,11 @@ class WandBWriter:
             logger.warning("For use wandb install it via \n\t pip install wandb")
 
         self.step = 0
-        # the mode is usually equal to the current partition name
-        # used to separate Partition1 and Partition2 metrics
         self.mode = ""
-        self.timer = datetime.now()
 
     def set_step(self, step, mode="train"):
-        """
-        Define current step and mode for the tracker.
-
-        Calculates the difference between method calls to monitor
-        training/evaluation speed.
-
-        Args:
-            step (int): current step.
-            mode (str): current mode (partition name).
-        """
         self.mode = mode
-        previous_step = self.step
         self.step = step
-        if step == 0:
-            self.timer = datetime.now()
-        else:
-            duration = datetime.now() - self.timer
-            self.add_scalar(
-                "steps_per_sec", (self.step - previous_step) / duration.total_seconds()
-            )
-            self.timer = datetime.now()
 
     def _object_name(self, object_name):
         """
