@@ -20,5 +20,5 @@ def collate_fn(dataset_items: list[dict]):
         [elem["data_object"] for elem in dataset_items], dim = 0
     )
     result_batch["labels"] = torch.tensor([elem["labels"] for elem in dataset_items])
-
+    result_batch["path"] = [item["path"] for item in dataset_items]
     return result_batch
