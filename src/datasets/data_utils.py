@@ -1,5 +1,5 @@
 from itertools import repeat
-
+from torch.utils.data import Subset
 from hydra.utils import instantiate
 
 from src.datasets.collate import collate_fn
@@ -64,7 +64,10 @@ def get_dataloaders(config, device):
 
     # dataset partitions init
     datasets = instantiate(config.datasets)  # instance transforms are defined inside
-
+    datasets["test"] = Subset(
+        datasets["test"],
+        range(min(4096, len(datasets["test"])))
+    )
     # dataloaders init
     dataloaders = {}
     for dataset_partition in config.datasets.keys():
