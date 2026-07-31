@@ -2,11 +2,11 @@ import torch
 
 
 def compute_eer(scores, labels):
-    thresholds = torch.sort(scores).values
+    ts = torch.sort(scores).values
 
     best = 1.0
 
-    for t in thresholds:
+    for t in ts:
         predict = (scores >= t).long()
 
         fp = ((predict == 1) & (labels == 0)).sum().float()
