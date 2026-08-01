@@ -1,9 +1,8 @@
 cff-version: 1.2.0
-message: "If you use this template, please cite it as below."
-title: "PyTorch Project Template"
+message: "Audio anti-spoofing project based on the PyTorch Project Template."
+title: "ASVspoof 2019 LA Anti-Spoofing"
 authors:
-  - family-names: Grinberg
-    given-names: Petr
-    orcid: https://orcid.org/0009-0008-4480-5595
-date-released: 2024-09-01
-url: https://github.com/Blinorot/pytorch_project_template
+  - family-names: Meleshko
+    given-names: Bogdan
+date-released: 2026-08-01
+url: https://github.com/bmeleshko01-hash/asvspoof-lcnn
